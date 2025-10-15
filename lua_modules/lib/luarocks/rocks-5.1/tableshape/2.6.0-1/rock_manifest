@@ -1,0 +1,12 @@
+rock_manifest = {
+   doc = {
+      ["README.md"] = "615187ae016c9343ba5f9b43df312d15"
+   },
+   lua = {
+      tableshape = {
+         ["init.lua"] = "246eded72cd531e82ae316f11a5312e1",
+         ["moonscript.lua"] = "8257be92f05ab3ec384dab4660b9011a"
+      }
+   },
+   ["tableshape-2.6.0-1.rockspec"] = "a64a9cc49d33052e8eb3eb639134446f"
+}

@@ -1,6 +1,27 @@
 @import "include/common";
 @import "../fonts/Raleway/stylesheet";
 
+// Page-specific styles
+@import "sight_reading_page";
+@import "settings_panel";
+@import "has_sidebar";
+@import "staff";
+@import "keyboard";
+@import "slider";
+@import "select";
+@import "lightbox";
+@import "device_picker_lightbox";
+@import "midi_selector";
+@import "midi_instrument_picker";
+@import "stats_lightbox";
+@import "ear_training_page";
+@import "flash_card_page";
+@import "play_along_page";
+@import "guide_page";
+@import "songs";
+@import "song_editor";
+@import "stats_page";
+
 body {
     color: var(--body-color);
     background: var(--body-background);
