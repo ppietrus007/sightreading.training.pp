@@ -5,7 +5,7 @@ import {MajorScale, parseNote, noteName} from "st/music"
 
 import {
   RandomNotes, SweepRangeNotes, MiniSteps, TriadNotes, SevenOpenNotes,
-  ProgressionGenerator, PositionGenerator, IntervalGenerator
+  ProgressionGenerator, PositionGenerator, IntervalGenerator, RandomSelectionNotes
 } from "st/generators"
 
 import {ChordGenerator, MultiKeyChordGenerator} from "st/chord_generators"
@@ -129,6 +129,36 @@ export const GENERATORS = [
       }
 
       return new RandomNotes(notes, options)
+    }
+  },
+  {
+    name: "random sel",
+    mode: "notes",
+    inputs: [
+      {
+        name: "customNotes",
+        label: "notes to use",
+        type: "textarea",
+        hint: "Space-separated notes (e.g., C4 E4 G4 B4)",
+        default: "C4 D4 E4 F4 G4 A4 B4 C5"
+      },
+      {
+        name: "notes",
+        type: "range",
+        min: 1,
+        max: 5,
+      },
+      {
+        name: "hands",
+        type: "range",
+        default: 2,
+        min: 1,
+        max: 2,
+      },
+      smoothInput,
+    ],
+    create: function(staff, keySignature, options) {
+      return new RandomSelectionNotes(options.customNotes, options)
     }
   },
   {

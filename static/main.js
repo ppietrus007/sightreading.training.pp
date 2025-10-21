@@ -29016,6 +29016,26 @@
       return this.notes[this.currentNote];
     }
   };
+  var RandomSelectionNotes = class extends RandomNotes {
+    constructor(userNotes, opts = {}) {
+      let notes = [];
+      if (typeof userNotes === "string") {
+        notes = userNotes.split(/\s+/).map((n) => n.trim()).filter((n) => n.length > 0).filter((n) => {
+          return /^[A-Ga-g][#b]?\d+$/.test(n);
+        }).map((n) => {
+          return n.charAt(0).toUpperCase() + n.slice(1);
+        });
+      } else if (Array.isArray(userNotes)) {
+        notes = userNotes.map(
+          (n) => typeof n === "string" ? n.charAt(0).toUpperCase() + n.slice(1) : n
+        );
+      }
+      if (notes.length === 0) {
+        notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"];
+      }
+      super(notes, opts);
+    }
+  };
 
   // js/st/chord_generators.js
   var import_mersennetwister3 = __toESM(require_MersenneTwister());
@@ -30443,6 +30463,36 @@
       }
     },
     {
+      name: "random sel",
+      mode: "notes",
+      inputs: [
+        {
+          name: "customNotes",
+          label: "notes to use",
+          type: "textarea",
+          hint: "Space-separated notes (e.g., C4 E4 G4 B4)",
+          default: "C4 D4 E4 F4 G4 A4 B4 C5"
+        },
+        {
+          name: "notes",
+          type: "range",
+          min: 1,
+          max: 5
+        },
+        {
+          name: "hands",
+          type: "range",
+          default: 2,
+          min: 1,
+          max: 2
+        },
+        smoothInput
+      ],
+      create: function(staff, keySignature, options) {
+        return new RandomSelectionNotes(options.customNotes, options);
+      }
+    },
+    {
       name: "sweep",
       mode: "notes",
       debug: true,
@@ -30994,6 +31044,9 @@
           case "toggles":
             fn = this.renderToggles;
             break;
+          case "textarea":
+            fn = this.renderTextarea;
+            break;
           default:
             console.error(`No input renderer for ${input.type}`);
             return;
@@ -31133,6 +31186,18 @@
           }
         ), " ", subName)
       ));
+    }
+    renderTextarea(input, idx) {
+      let currentValue = this.cachedSettings[input.name] || input.default || "";
+      return /* @__PURE__ */ React15.createElement("div", { className: "textarea_row" }, /* @__PURE__ */ React15.createElement(
+        "textarea",
+        {
+          rows: 3,
+          value: currentValue,
+          placeholder: input.hint,
+          onChange: (e2) => this.updateInputValue(input, e2.target.value)
+        }
+      ), input.hint && /* @__PURE__ */ React15.createElement("div", { className: "input_hint" }, input.hint));
     }
   };
   __publicField(GeneratorSettings, "propTypes", {

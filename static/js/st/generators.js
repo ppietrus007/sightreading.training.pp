@@ -660,3 +660,37 @@ export class IntervalGenerator extends Generator {
   }
 }
 
+// Generator that uses user-specified notes
+export class RandomSelectionNotes extends RandomNotes {
+  constructor(userNotes, opts={}) {
+    // Parse the user input string into an array of note names
+    let notes = []
+    if (typeof userNotes === 'string') {
+      notes = userNotes
+        .split(/\s+/)
+        .map(n => n.trim())
+        .filter(n => n.length > 0)
+        .filter(n => {
+          // Validate note format: should match pattern like C4, D#5, Eb3, etc.
+          // Valid format: Letter (A-G) + optional accidental (# or b) + octave number
+          return /^[A-Ga-g][#b]?\d+$/.test(n)
+        })
+        .map(n => {
+          // Normalize to uppercase for first letter to match expected format
+          return n.charAt(0).toUpperCase() + n.slice(1)
+        })
+    } else if (Array.isArray(userNotes)) {
+      notes = userNotes.map(n => 
+        typeof n === 'string' ? n.charAt(0).toUpperCase() + n.slice(1) : n
+      )
+    }
+
+    // If no valid notes provided, use a default C major scale
+    if (notes.length === 0) {
+      notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"]
+    }
+
+    // Call parent constructor with the parsed notes
+    super(notes, opts)
+  }
+}

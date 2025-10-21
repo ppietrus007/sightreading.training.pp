@@ -256,6 +256,9 @@ export class GeneratorSettings extends React.PureComponent {
           case "toggles":
             fn = this.renderToggles
             break
+          case "textarea":
+            fn = this.renderTextarea
+            break
           default:
             console.error(`No input renderer for ${input.type}`)
             return
@@ -425,6 +428,18 @@ export class GeneratorSettings extends React.PureComponent {
       )}
     </div>
   }
+
+  renderTextarea(input, idx) {
+    let currentValue = this.cachedSettings[input.name] || input.default || ""
+
+    return <div className="textarea_row">
+      <textarea
+        rows={3}
+        value={currentValue}
+        placeholder={input.hint}
+        onChange={e => this.updateInputValue(input, e.target.value)}
+      />
+      {input.hint && <div className="input_hint">{input.hint}</div>}
+    </div>
+  }
 }
-
-
