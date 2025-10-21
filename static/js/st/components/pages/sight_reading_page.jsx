@@ -73,6 +73,11 @@ export default class SightReadingPage extends React.Component {
   componentDidMount() {
     setTitle()
 
+    // Register this page to receive MIDI messages
+    if (this.props.setCurrentPageRef) {
+      this.props.setCurrentPageRef(this)
+    }
+
     this.setStaff(STAVES[0], () => {
       this.enterWaitMode()
     })
@@ -109,6 +114,11 @@ export default class SightReadingPage extends React.Component {
   }
 
   componentWillUnmount() {
+    // Unregister this page from receiving MIDI messages
+    if (this.props.setCurrentPageRef) {
+      this.props.setCurrentPageRef(null)
+    }
+
     document.removeEventListener("webkitfullscreenchange", this.onFullscreenChange)
 
     if (this.nosleep && this.state.fullscreen) {

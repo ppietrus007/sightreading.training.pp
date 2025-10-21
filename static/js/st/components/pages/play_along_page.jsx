@@ -333,6 +333,12 @@ export class PlayAlongPage extends React.Component {
 
   componentDidMount() {
     setTitle("Play along")
+    
+    // Register this page to receive MIDI messages
+    if (this.props.setCurrentPageRef) {
+      this.props.setCurrentPageRef(this)
+    }
+    
     this.updateBeat(0)
     if (!this.props.newSong) {
       this.loadSong()
@@ -360,6 +366,11 @@ export class PlayAlongPage extends React.Component {
   }
 
   componentWillUnmount() {
+    // Unregister this page from receiving MIDI messages
+    if (this.props.setCurrentPageRef) {
+      this.props.setCurrentPageRef(null)
+    }
+    
     if (this.state.songTimer) {
       this.state.songTimer.reset()
     }
@@ -827,4 +838,3 @@ export function PlayAlongPageWithParams(props) {
   const params = useParams()
   return <PlayAlongPage {...props} params={params} />
 }
-

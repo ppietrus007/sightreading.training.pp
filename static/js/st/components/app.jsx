@@ -39,6 +39,8 @@ class Layout extends React.Component {
       midiOutputChannel
     }
 
+    this.currentPageRef = null
+
     if (navigator.requestMIDIAccess) {
       navigator.requestMIDIAccess().then(
         midi => {
@@ -47,6 +49,10 @@ class Layout extends React.Component {
         },
         error => console.warn("failed to get MIDI"))
     }
+  }
+
+  setCurrentPage = (ref) => {
+    this.currentPageRef = ref
   }
 
   loadDefaultSettings() {
@@ -95,6 +101,7 @@ class Layout extends React.Component {
       midi: this.state.midi,
       midiInput: this.state.midiInput,
       midiOutput: this.state.midiOutputChannel,
+      setCurrentPageRef: this.setCurrentPage,
     }
   }
 
@@ -219,8 +226,8 @@ class Layout extends React.Component {
     }
 
     // proxy message to the current page
-    if (this.currentPage && this.currentPage.onMidiMessage) {
-      this.currentPage.onMidiMessage(message)
+    if (this.currentPageRef && this.currentPageRef.onMidiMessage) {
+      this.currentPageRef.onMidiMessage(message)
     }
   }
 

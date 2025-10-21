@@ -3,6 +3,20 @@ import {NOTE_EVENTS} from "st/midi"
 import * as types from "prop-types"
 
 export default class LatencyPage extends React.Component {
+  componentDidMount() {
+    // Register this page to receive MIDI messages
+    if (this.props.setCurrentPageRef) {
+      this.props.setCurrentPageRef(this)
+    }
+  }
+
+  componentWillUnmount() {
+    // Unregister this page from receiving MIDI messages
+    if (this.props.setCurrentPageRef) {
+      this.props.setCurrentPageRef(null)
+    }
+  }
+
   render() {
     let metronomeButton = <button
       onClick={e => {

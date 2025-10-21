@@ -25,6 +25,20 @@ export default class EarTrainingPage extends React.Component {
     this.state = {}
   }
 
+  componentDidMount() {
+    // Register this page to receive MIDI messages
+    if (this.props.setCurrentPageRef) {
+      this.props.setCurrentPageRef(this)
+    }
+  }
+
+  componentWillUnmount() {
+    // Unregister this page from receiving MIDI messages
+    if (this.props.setCurrentPageRef) {
+      this.props.setCurrentPageRef(null)
+    }
+  }
+
   onMidiMessage(message) {
     if (this.currentExercise) {
       this.currentExercise.onMidiMessage(message)

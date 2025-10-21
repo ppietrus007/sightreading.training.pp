@@ -32658,6 +32658,9 @@
     }
     componentDidMount() {
       setTitle();
+      if (this.props.setCurrentPageRef) {
+        this.props.setCurrentPageRef(this);
+      }
       this.setStaff(STAVES[0], () => {
         this.enterWaitMode();
       });
@@ -32687,6 +32690,9 @@
       document.addEventListener("webkitfullscreenchange", this.onFullscreenChange);
     }
     componentWillUnmount() {
+      if (this.props.setCurrentPageRef) {
+        this.props.setCurrentPageRef(null);
+      }
       document.removeEventListener("webkitfullscreenchange", this.onFullscreenChange);
       if (this.nosleep && this.state.fullscreen) {
         this.nosleep.disable();
@@ -49303,6 +49309,16 @@
       super(props);
       this.state = {};
     }
+    componentDidMount() {
+      if (this.props.setCurrentPageRef) {
+        this.props.setCurrentPageRef(this);
+      }
+    }
+    componentWillUnmount() {
+      if (this.props.setCurrentPageRef) {
+        this.props.setCurrentPageRef(null);
+      }
+    }
     onMidiMessage(message) {
       if (this.currentExercise) {
         this.currentExercise.onMidiMessage(message);
@@ -50325,6 +50341,9 @@
     }
     componentDidMount() {
       setTitle("Play along");
+      if (this.props.setCurrentPageRef) {
+        this.props.setCurrentPageRef(this);
+      }
       this.updateBeat(0);
       if (!this.props.newSong) {
         this.loadSong();
@@ -50350,6 +50369,9 @@
       });
     }
     componentWillUnmount() {
+      if (this.props.setCurrentPageRef) {
+        this.props.setCurrentPageRef(null);
+      }
       if (this.state.songTimer) {
         this.state.songTimer.reset();
       }
@@ -50723,6 +50745,16 @@
   // js/st/components/pages/latency.jsx
   var React42 = __toESM(require_react());
   var LatencyPage = class extends React42.Component {
+    componentDidMount() {
+      if (this.props.setCurrentPageRef) {
+        this.props.setCurrentPageRef(this);
+      }
+    }
+    componentWillUnmount() {
+      if (this.props.setCurrentPageRef) {
+        this.props.setCurrentPageRef(null);
+      }
+    }
     render() {
       let metronomeButton = /* @__PURE__ */ React42.createElement(
         "button",
@@ -51391,6 +51423,7 @@
         forwardMidi: readConfig("defaults:forwardMidi") == 1,
         midiOutputChannel
       };
+      this.currentPageRef = null;
       if (navigator.requestMIDIAccess) {
         navigator.requestMIDIAccess().then(
           (midi) => {
@@ -51401,6 +51434,9 @@
         );
       }
     }
+    setCurrentPage = (ref) => {
+      this.currentPageRef = ref;
+    };
     loadDefaultSettings() {
       const defaultMidiInput = readConfig("defaults:midiIn");
       if (defaultMidiInput) {
@@ -51443,7 +51479,8 @@
       return {
         midi: this.state.midi,
         midiInput: this.state.midiInput,
-        midiOutput: this.state.midiOutputChannel
+        midiOutput: this.state.midiOutputChannel,
+        setCurrentPageRef: this.setCurrentPage
       };
     }
     render() {
@@ -51513,8 +51550,8 @@
       if (this.state.forwardMidi && this.state.midiOutputChannel) {
         this.state.midiOutputChannel.sendMessage(message.data);
       }
-      if (this.currentPage && this.currentPage.onMidiMessage) {
-        this.currentPage.onMidiMessage(message);
+      if (this.currentPageRef && this.currentPageRef.onMidiMessage) {
+        this.currentPageRef.onMidiMessage(message);
       }
     }
     renderMidiLightbox() {
