@@ -1,5 +1,5 @@
 
-import {parseNote, noteName, MajorScale, Chord} from "st/music"
+import {parseNote, noteName, MajorScale, MinorScale, Chord} from "st/music"
 import MersenneTwister from "mersennetwister"
 
 import {shuffled} from "st/util"
@@ -663,10 +663,117 @@ export class IntervalGenerator extends Generator {
 // Generator that uses user-specified notes
 export class RandomSelectionNotes extends RandomNotes {
   constructor(userNotes, opts={}) {
-    // Parse the user input string into an array of note names
     let notes = []
-    if (typeof userNotes === 'string') {
-      notes = userNotes
+    let isChordMode = false
+    
+    // If using key mode, generate notes from scale
+    if (opts.useKey && opts.keySignature && opts.staff) {
+      notes = RandomSelectionNotes.generateNotesFromKey(opts)
+    } else {
+      // Parse user input - can be individual notes or chords
+      const parsed = RandomSelectionNotes.parseUserInput(userNotes)
+      notes = parsed.notes
+      isChordMode = parsed.isChordMode
+    }
+
+    // If no valid notes provided, use a default C major scale
+    if (notes.length === 0) {
+      notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"]
+    }
+
+    // Call parent constructor with the parsed notes
+    super(notes, opts)
+    
+    // Store chord blocks if in chord mode
+    this.isChordMode = isChordMode
+    this.chordBlocks = isChordMode ? notes : null
+  }
+
+  _nextNote() {
+    // If in chord mode, pick a random chord block
+    if (this.isChordMode && this.chordBlocks) {
+      const randomIndex = this.generator.int() % this.chordBlocks.length
+      return this.chordBlocks[randomIndex]
+    }
+    
+    // Otherwise use parent's logic
+    return super._nextNote()
+  }
+
+  static generateNotesFromKey(opts) {
+    const { keySignature, scaleType, octaveMin, octaveMax, staff } = opts
+    
+    // Determine scale type
+    let scale
+    if (scaleType === 'natural minor') {
+      scale = new MinorScale(keySignature)
+    } else {
+      // Default to major
+      scale = new MajorScale(keySignature)
+    }
+    
+    // Get octave range
+    const minOct = octaveMin || 4
+    const maxOct = octaveMax || 5
+    
+    // Generate notes across the octave range
+    let notes = []
+    for (let octave = minOct; octave <= maxOct; octave++) {
+      const scaleNotes = scale.getRange(octave, scale.steps.length + 1)
+      notes = notes.concat(scaleNotes)
+    }
+    
+    // Filter to staff range if needed
+    if (staff && staff.range) {
+      const staffMin = parseNote(staff.range[0])
+      const staffMax = parseNote(staff.range[1])
+      notes = notes.filter(note => {
+        const pitch = parseNote(note)
+        return pitch >= staffMin && pitch <= staffMax
+      })
+    }
+    
+    return notes
+  }
+
+  static parseUserInput(userNotes) {
+    if (typeof userNotes !== 'string') {
+      if (Array.isArray(userNotes)) {
+        return {
+          notes: userNotes.map(n => 
+            typeof n === 'string' ? n.charAt(0).toUpperCase() + n.slice(1) : n
+          ),
+          isChordMode: false
+        }
+      }
+      return { notes: [], isChordMode: false }
+    }
+
+    // Check if input contains commas (chord blocks)
+    if (userNotes.includes(',')) {
+      // Parse as chord blocks: "C4 E4 G4, D4 F4 A4"
+      const chordBlocks = userNotes
+        .split(',')
+        .map(chordBlock => {
+          // Each chord block is an array of notes
+          const notes = chordBlock
+            .split(/\s+/)
+            .map(n => n.trim())
+            .filter(n => n.length > 0)
+            .filter(n => /^[A-Ga-g][#b]?\d+$/.test(n))
+            .map(n => n.charAt(0).toUpperCase() + n.slice(1))
+          
+          return notes.length > 0 ? notes : null
+        })
+        .filter(block => block !== null)
+      
+      return {
+        notes: chordBlocks,
+        isChordMode: true
+      }
+    } else {
+      // Parse as individual notes: "C4 E4 G4 B4"
+      const notes = userNotes
         .split(/\s+/)
         .map(n => n.trim())
         .filter(n => n.length > 0)
@@ -679,18 +786,11 @@ export class RandomSelectionNotes extends RandomNotes {
           // Normalize to uppercase for first letter to match expected format
           return n.charAt(0).toUpperCase() + n.slice(1)
         })
-    } else if (Array.isArray(userNotes)) {
-      notes = userNotes.map(n => 
-        typeof n === 'string' ? n.charAt(0).toUpperCase() + n.slice(1) : n
-      )
+      
+      return {
+        notes: notes,
+        isChordMode: false
+      }
     }
-
-    // If no valid notes provided, use a default C major scale
-    if (notes.length === 0) {
-      notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"]
-    }
-
-    // Call parent constructor with the parsed notes
-    super(notes, opts)
   }
 }

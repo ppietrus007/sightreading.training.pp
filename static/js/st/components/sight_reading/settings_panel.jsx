@@ -235,7 +235,13 @@ export class GeneratorSettings extends React.PureComponent {
     let inputs = this.props.generator.inputs
 
     return <div className="generator_inputs">{
-      inputs.map((input, idx) => {
+      inputs.filter(input => {
+        // Check if input should be shown based on showIf condition
+        if (input.showIf && typeof input.showIf === 'function') {
+          return input.showIf(this.cachedSettings)
+        }
+        return true
+      }).map((input, idx) => {
         let fn
         switch (input.type) {
           case "select":

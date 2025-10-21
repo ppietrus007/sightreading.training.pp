@@ -136,11 +136,55 @@ export const GENERATORS = [
     mode: "notes",
     inputs: [
       {
+        name: "useKey",
+        label: "use key",
+        type: "bool",
+        hint: "Generate notes from a scale",
+        default: false
+      },
+      {
+        name: "scaleType",
+        label: "scale type",
+        type: "select",
+        values: [
+          { name: "major" },
+          { name: "natural minor" },
+        ],
+        showIf: (settings) => settings.useKey
+      },
+      {
+        name: "octaveMin",
+        label: "min octave",
+        type: "select",
+        values: [
+          { name: "3", value: 3 },
+          { name: "4", value: 4 },
+          { name: "5", value: 5 },
+          { name: "6", value: 6 },
+        ],
+        default: 4,
+        showIf: (settings) => settings.useKey
+      },
+      {
+        name: "octaveMax",
+        label: "max octave",
+        type: "select",
+        values: [
+          { name: "4", value: 4 },
+          { name: "5", value: 5 },
+          { name: "6", value: 6 },
+          { name: "7", value: 7 },
+        ],
+        default: 5,
+        showIf: (settings) => settings.useKey
+      },
+      {
         name: "customNotes",
         label: "notes to use",
         type: "textarea",
-        hint: "Space-separated notes (e.g., C4 E4 G4 B4)",
-        default: "C4 D4 E4 F4 G4 A4 B4 C5"
+        hint: "Individual notes (e.g., 'C4 E4 G4') or chords separated by commas (e.g., 'C4 E4 G4, D4 F4 A4')",
+        default: "C4 D4 E4 F4 G4 A4 B4 C5",
+        showIf: (settings) => !settings.useKey
       },
       {
         name: "notes",
@@ -158,7 +202,11 @@ export const GENERATORS = [
       smoothInput,
     ],
     create: function(staff, keySignature, options) {
-      return new RandomSelectionNotes(options.customNotes, options)
+      return new RandomSelectionNotes(options.customNotes, {
+        ...options,
+        keySignature: options.useKey ? keySignature : null,
+        staff
+      })
     }
   },
   {

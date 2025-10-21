@@ -29019,21 +29019,85 @@
   var RandomSelectionNotes = class extends RandomNotes {
     constructor(userNotes, opts = {}) {
       let notes = [];
-      if (typeof userNotes === "string") {
-        notes = userNotes.split(/\s+/).map((n) => n.trim()).filter((n) => n.length > 0).filter((n) => {
-          return /^[A-Ga-g][#b]?\d+$/.test(n);
-        }).map((n) => {
-          return n.charAt(0).toUpperCase() + n.slice(1);
-        });
-      } else if (Array.isArray(userNotes)) {
-        notes = userNotes.map(
-          (n) => typeof n === "string" ? n.charAt(0).toUpperCase() + n.slice(1) : n
-        );
+      let isChordMode = false;
+      if (opts.useKey && opts.keySignature && opts.staff) {
+        notes = RandomSelectionNotes.generateNotesFromKey(opts);
+      } else {
+        const parsed = RandomSelectionNotes.parseUserInput(userNotes);
+        notes = parsed.notes;
+        isChordMode = parsed.isChordMode;
       }
       if (notes.length === 0) {
         notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"];
       }
       super(notes, opts);
+      this.isChordMode = isChordMode;
+      this.chordBlocks = isChordMode ? notes : null;
+    }
+    _nextNote() {
+      if (this.isChordMode && this.chordBlocks) {
+        const randomIndex = this.generator.int() % this.chordBlocks.length;
+        return this.chordBlocks[randomIndex];
+      }
+      return super._nextNote();
+    }
+    static generateNotesFromKey(opts) {
+      const { keySignature, scaleType, octaveMin, octaveMax, staff } = opts;
+      let scale;
+      if (scaleType === "natural minor") {
+        scale = new MinorScale(keySignature);
+      } else {
+        scale = new MajorScale(keySignature);
+      }
+      const minOct = octaveMin || 4;
+      const maxOct = octaveMax || 5;
+      let notes = [];
+      for (let octave = minOct; octave <= maxOct; octave++) {
+        const scaleNotes = scale.getRange(octave, scale.steps.length + 1);
+        notes = notes.concat(scaleNotes);
+      }
+      if (staff && staff.range) {
+        const staffMin = parseNote(staff.range[0]);
+        const staffMax = parseNote(staff.range[1]);
+        notes = notes.filter((note) => {
+          const pitch = parseNote(note);
+          return pitch >= staffMin && pitch <= staffMax;
+        });
+      }
+      return notes;
+    }
+    static parseUserInput(userNotes) {
+      if (typeof userNotes !== "string") {
+        if (Array.isArray(userNotes)) {
+          return {
+            notes: userNotes.map(
+              (n) => typeof n === "string" ? n.charAt(0).toUpperCase() + n.slice(1) : n
+            ),
+            isChordMode: false
+          };
+        }
+        return { notes: [], isChordMode: false };
+      }
+      if (userNotes.includes(",")) {
+        const chordBlocks = userNotes.split(",").map((chordBlock) => {
+          const notes = chordBlock.split(/\s+/).map((n) => n.trim()).filter((n) => n.length > 0).filter((n) => /^[A-Ga-g][#b]?\d+$/.test(n)).map((n) => n.charAt(0).toUpperCase() + n.slice(1));
+          return notes.length > 0 ? notes : null;
+        }).filter((block) => block !== null);
+        return {
+          notes: chordBlocks,
+          isChordMode: true
+        };
+      } else {
+        const notes = userNotes.split(/\s+/).map((n) => n.trim()).filter((n) => n.length > 0).filter((n) => {
+          return /^[A-Ga-g][#b]?\d+$/.test(n);
+        }).map((n) => {
+          return n.charAt(0).toUpperCase() + n.slice(1);
+        });
+        return {
+          notes,
+          isChordMode: false
+        };
+      }
     }
   };
 
@@ -30467,11 +30531,55 @@
       mode: "notes",
       inputs: [
         {
+          name: "useKey",
+          label: "use key",
+          type: "bool",
+          hint: "Generate notes from a scale",
+          default: false
+        },
+        {
+          name: "scaleType",
+          label: "scale type",
+          type: "select",
+          values: [
+            { name: "major" },
+            { name: "natural minor" }
+          ],
+          showIf: (settings) => settings.useKey
+        },
+        {
+          name: "octaveMin",
+          label: "min octave",
+          type: "select",
+          values: [
+            { name: "3", value: 3 },
+            { name: "4", value: 4 },
+            { name: "5", value: 5 },
+            { name: "6", value: 6 }
+          ],
+          default: 4,
+          showIf: (settings) => settings.useKey
+        },
+        {
+          name: "octaveMax",
+          label: "max octave",
+          type: "select",
+          values: [
+            { name: "4", value: 4 },
+            { name: "5", value: 5 },
+            { name: "6", value: 6 },
+            { name: "7", value: 7 }
+          ],
+          default: 5,
+          showIf: (settings) => settings.useKey
+        },
+        {
           name: "customNotes",
           label: "notes to use",
           type: "textarea",
-          hint: "Space-separated notes (e.g., C4 E4 G4 B4)",
-          default: "C4 D4 E4 F4 G4 A4 B4 C5"
+          hint: "Individual notes (e.g., 'C4 E4 G4') or chords separated by commas (e.g., 'C4 E4 G4, D4 F4 A4')",
+          default: "C4 D4 E4 F4 G4 A4 B4 C5",
+          showIf: (settings) => !settings.useKey
         },
         {
           name: "notes",
@@ -30489,7 +30597,11 @@
         smoothInput
       ],
       create: function(staff, keySignature, options) {
-        return new RandomSelectionNotes(options.customNotes, options);
+        return new RandomSelectionNotes(options.customNotes, {
+          ...options,
+          keySignature: options.useKey ? keySignature : null,
+          staff
+        });
       }
     },
     {
@@ -31023,7 +31135,12 @@
         ...this.props.currentSettings
       };
       let inputs = this.props.generator.inputs;
-      return /* @__PURE__ */ React15.createElement("div", { className: "generator_inputs" }, inputs.map((input, idx) => {
+      return /* @__PURE__ */ React15.createElement("div", { className: "generator_inputs" }, inputs.filter((input) => {
+        if (input.showIf && typeof input.showIf === "function") {
+          return input.showIf(this.cachedSettings);
+        }
+        return true;
+      }).map((input, idx) => {
         let fn;
         switch (input.type) {
           case "select":
