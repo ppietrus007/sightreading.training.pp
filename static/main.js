@@ -32742,7 +32742,11 @@
         throw new Error(`unknown generator mode: ${generator.mode}`);
       }
       notes.fillBuffer(this.state.bufferSize);
-      return this.setState({ notes });
+      return this.setState({
+        notes,
+        heldNotes: {},
+        touchedNotes: {}
+      });
     }
     // called when held notes reaches 0
     checkRelease() {
@@ -32828,18 +32832,26 @@
           break;
         }
       }
-      this.state.heldNotes[note] = true;
-      this.state.touchedNotes[note] = true;
-      if (!this.checkPress()) {
-        this.forceUpdate();
-      }
+      this.setState((prevState) => ({
+        heldNotes: { ...prevState.heldNotes, [note]: true },
+        touchedNotes: { ...prevState.touchedNotes, [note]: true }
+      }), () => {
+        if (!this.checkPress()) {
+          this.forceUpdate();
+        }
+      });
     }
     releaseNote(note) {
       if (this.state.heldNotes[note]) {
-        delete this.state.heldNotes[note];
-        if (Object.keys(this.state.heldNotes).length == 0) {
-          this.checkRelease();
-        }
+        this.setState((prevState) => {
+          const newHeldNotes = { ...prevState.heldNotes };
+          delete newHeldNotes[note];
+          return { heldNotes: newHeldNotes };
+        }, () => {
+          if (Object.keys(this.state.heldNotes).length == 0) {
+            this.checkRelease();
+          }
+        });
       }
     }
     onMidiMessage(message) {
@@ -33076,7 +33088,6 @@
         },
         "Configure"
       ), " ", fullscreenButton), /* @__PURE__ */ React20.createElement("div", { className: "stats" }, streak, /* @__PURE__ */ React20.createElement("div", { className: "stat_container", onClick: this.openStatsLightbox.bind(this) }, /* @__PURE__ */ React20.createElement("div", { className: "value" }, this.state.stats.hits), /* @__PURE__ */ React20.createElement("div", { className: "label" }, "hits")), /* @__PURE__ */ React20.createElement("div", { className: "stat_container", onClick: this.openStatsLightbox.bind(this) }, /* @__PURE__ */ React20.createElement("div", { className: "value" }, this.state.stats.misses), /* @__PURE__ */ React20.createElement("div", { className: "label" }, "misses"))));
-      let debug = /* @__PURE__ */ React20.createElement("div", { className: "debug" }, /* @__PURE__ */ React20.createElement("pre", null, "held: ", JSON.stringify(this.state.heldNotes), " ", "pressed: ", JSON.stringify(this.state.touchedNotes)));
       let modeToggle = /* @__PURE__ */ React20.createElement("div", { className: "tool" }, /* @__PURE__ */ React20.createElement("span", { className: "label" }, "Mode"), /* @__PURE__ */ React20.createElement(
         "div",
         {
@@ -33111,7 +33122,8 @@
           scale: this.state.scale
         });
       }
-      return /* @__PURE__ */ React20.createElement("div", { ref: "workspace", className: "workspace" }, /* @__PURE__ */ React20.createElement("div", { className: "workspace_wrapper" }, header, /* @__PURE__ */ React20.createElement("div", { className: "staff_wrapper" }, staff), /* @__PURE__ */ React20.createElement("div", { className: "toolbar" }, modeToggle)));
+      let debug = /* @__PURE__ */ React20.createElement("div", { className: "debug" }, /* @__PURE__ */ React20.createElement("pre", null, "held: ", JSON.stringify(this.state.heldNotes), " ", "pressed: ", JSON.stringify(this.state.touchedNotes)));
+      return /* @__PURE__ */ React20.createElement("div", { ref: "workspace", className: "workspace" }, /* @__PURE__ */ React20.createElement("div", { className: "workspace_wrapper" }, header, /* @__PURE__ */ React20.createElement("div", { className: "staff_wrapper" }, staff), /* @__PURE__ */ React20.createElement("div", { className: "toolbar" }, modeToggle), debug));
     }
   };
 

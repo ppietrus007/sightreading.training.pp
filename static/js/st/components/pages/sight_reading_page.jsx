@@ -178,7 +178,11 @@ export default class SightReadingPage extends React.Component {
     }
 
     notes.fillBuffer(this.state.bufferSize)
-    return this.setState({ notes: notes })
+    return this.setState({ 
+      notes: notes,
+      heldNotes: {},
+      touchedNotes: {}
+    })
   }
 
   // called when held notes reaches 0
@@ -286,22 +290,28 @@ export default class SightReadingPage extends React.Component {
       }
     }
 
-    this.state.heldNotes[note] = true;
-    this.state.touchedNotes[note] = true;
-
-    if (!this.checkPress()) {
-      this.forceUpdate();
-    }
+    this.setState((prevState) => ({
+      heldNotes: { ...prevState.heldNotes, [note]: true },
+      touchedNotes: { ...prevState.touchedNotes, [note]: true }
+    }), () => {
+      if (!this.checkPress()) {
+        this.forceUpdate();
+      }
+    });
   }
 
   releaseNote(note) {
     // note might no longer be considered held if we just moved to next note
     if (this.state.heldNotes[note]) {
-      delete this.state.heldNotes[note];
-
-      if (Object.keys(this.state.heldNotes).length == 0) {
-        this.checkRelease();
-      }
+      this.setState((prevState) => {
+        const newHeldNotes = { ...prevState.heldNotes };
+        delete newHeldNotes[note];
+        return { heldNotes: newHeldNotes };
+      }, () => {
+        if (Object.keys(this.state.heldNotes).length == 0) {
+          this.checkRelease();
+        }
+      });
     }
   }
 
@@ -569,14 +579,6 @@ export default class SightReadingPage extends React.Component {
       </div>
     </div>
 
-    let debug = <div className="debug">
-      <pre>
-        held: {JSON.stringify(this.state.heldNotes)}
-        {" "}
-        pressed: {JSON.stringify(this.state.touchedNotes)}
-      </pre>
-    </div>
-
     let modeToggle = <div className="tool">
       <span className="label">Mode</span>
       <div
@@ -615,6 +617,14 @@ export default class SightReadingPage extends React.Component {
       })
     }
 
+    let debug = <div className="debug">
+      <pre>
+        held: {JSON.stringify(this.state.heldNotes)}
+        {" "}
+        pressed: {JSON.stringify(this.state.touchedNotes)}
+      </pre>
+    </div>
+
     return <div ref="workspace" className="workspace">
       <div className="workspace_wrapper">
         {header}
@@ -624,6 +634,7 @@ export default class SightReadingPage extends React.Component {
         <div className="toolbar">
           {modeToggle}
         </div>
+        {debug}
       </div>
     </div>;
   }
