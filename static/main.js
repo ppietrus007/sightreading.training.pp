@@ -29119,7 +29119,8 @@
       this.noteList = notes;
       this.currentIndex = 0;
     }
-    _nextNote() {
+    // Override nextNote to bypass smoothness logic for sequential playback
+    nextNote() {
       if (this.noteList.length === 0) {
         return ["C4"];
       }
@@ -29130,6 +29131,9 @@
       } else {
         return [currentNote];
       }
+    }
+    _nextNote() {
+      return this.nextNote();
     }
   };
 
