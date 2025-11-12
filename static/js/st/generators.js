@@ -1,4 +1,3 @@
-
 import {parseNote, noteName, MajorScale, MinorScale, Chord} from "st/music"
 import MersenneTwister from "mersennetwister"
 
@@ -660,7 +659,7 @@ export class IntervalGenerator extends Generator {
   }
 }
 
-// Generator that uses user-specified notes
+// Generator that uses user-specified notes in random order
 export class RandomSelectionNotes extends RandomNotes {
   constructor(userNotes, opts={}) {
     let notes = []
@@ -791,6 +790,53 @@ export class RandomSelectionNotes extends RandomNotes {
         notes: notes,
         isChordMode: false
       }
+    }
+  }
+}
+
+// Generator that uses user-specified notes in sequential order
+export class SequentialSelectionNotes extends Generator {
+  constructor(userNotes, opts={}) {
+    super(opts)
+    
+    let notes = []
+    let isChordMode = false
+    
+    // If using key mode, generate notes from scale
+    if (opts.useKey && opts.keySignature && opts.staff) {
+      notes = RandomSelectionNotes.generateNotesFromKey(opts)
+    } else {
+      // Parse user input - can be individual notes or chords
+      const parsed = RandomSelectionNotes.parseUserInput(userNotes)
+      notes = parsed.notes
+      isChordMode = parsed.isChordMode
+    }
+
+    // If no valid notes provided, use a default C major scale
+    if (notes.length === 0) {
+      notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"]
+    }
+
+    // Store the notes/chords and mode
+    this.isChordMode = isChordMode
+    this.noteList = notes
+    this.currentIndex = 0
+  }
+
+  _nextNote() {
+    if (this.noteList.length === 0) {
+      return ["C4"]
+    }
+
+    // Get current note(s) and advance index
+    const currentNote = this.noteList[this.currentIndex]
+    this.currentIndex = (this.currentIndex + 1) % this.noteList.length
+
+    // Return as array for consistency
+    if (Array.isArray(currentNote)) {
+      return currentNote
+    } else {
+      return [currentNote]
     }
   }
 }

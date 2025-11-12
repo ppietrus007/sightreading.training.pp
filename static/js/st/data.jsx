@@ -5,7 +5,8 @@ import {MajorScale, parseNote, noteName} from "st/music"
 
 import {
   RandomNotes, SweepRangeNotes, MiniSteps, TriadNotes, SevenOpenNotes,
-  ProgressionGenerator, PositionGenerator, IntervalGenerator, RandomSelectionNotes
+  ProgressionGenerator, PositionGenerator, IntervalGenerator, RandomSelectionNotes,
+  SequentialSelectionNotes
 } from "st/generators"
 
 import {ChordGenerator, MultiKeyChordGenerator} from "st/chord_generators"
@@ -132,9 +133,19 @@ export const GENERATORS = [
     }
   },
   {
-    name: "random sel",
+    name: "selection",
     mode: "notes",
     inputs: [
+      {
+        name: "selectionMode",
+        label: "selection mode",
+        type: "select",
+        default: "random",
+        values: [
+          { name: "random" },
+          { name: "sequential" }
+        ]
+      },
       {
         name: "useKey",
         label: "use key",
@@ -202,7 +213,11 @@ export const GENERATORS = [
       smoothInput,
     ],
     create: function(staff, keySignature, options) {
-      return new RandomSelectionNotes(options.customNotes, {
+      const GeneratorClass = options.selectionMode === "sequential" 
+        ? SequentialSelectionNotes 
+        : RandomSelectionNotes;
+      
+      return new GeneratorClass(options.customNotes, {
         ...options,
         keySignature: options.useKey ? keySignature : null,
         staff

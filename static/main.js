@@ -29100,6 +29100,38 @@
       }
     }
   };
+  var SequentialSelectionNotes = class extends Generator {
+    constructor(userNotes, opts = {}) {
+      super(opts);
+      let notes = [];
+      let isChordMode = false;
+      if (opts.useKey && opts.keySignature && opts.staff) {
+        notes = RandomSelectionNotes.generateNotesFromKey(opts);
+      } else {
+        const parsed = RandomSelectionNotes.parseUserInput(userNotes);
+        notes = parsed.notes;
+        isChordMode = parsed.isChordMode;
+      }
+      if (notes.length === 0) {
+        notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"];
+      }
+      this.isChordMode = isChordMode;
+      this.noteList = notes;
+      this.currentIndex = 0;
+    }
+    _nextNote() {
+      if (this.noteList.length === 0) {
+        return ["C4"];
+      }
+      const currentNote = this.noteList[this.currentIndex];
+      this.currentIndex = (this.currentIndex + 1) % this.noteList.length;
+      if (Array.isArray(currentNote)) {
+        return currentNote;
+      } else {
+        return [currentNote];
+      }
+    }
+  };
 
   // js/st/chord_generators.js
   var import_mersennetwister3 = __toESM(require_MersenneTwister());
@@ -30527,9 +30559,19 @@
       }
     },
     {
-      name: "random sel",
+      name: "selection",
       mode: "notes",
       inputs: [
+        {
+          name: "selectionMode",
+          label: "selection mode",
+          type: "select",
+          default: "random",
+          values: [
+            { name: "random" },
+            { name: "sequential" }
+          ]
+        },
         {
           name: "useKey",
           label: "use key",
@@ -30597,7 +30639,8 @@
         smoothInput
       ],
       create: function(staff, keySignature, options) {
-        return new RandomSelectionNotes(options.customNotes, {
+        const GeneratorClass = options.selectionMode === "sequential" ? SequentialSelectionNotes : RandomSelectionNotes;
+        return new GeneratorClass(options.customNotes, {
           ...options,
           keySignature: options.useKey ? keySignature : null,
           staff
